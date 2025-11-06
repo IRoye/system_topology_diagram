@@ -1,0 +1,20 @@
+{
+  "name": "databuff-topology",
+  "version": "1.0.0",
+  "description": "Topology visualization demo using AntV G6",
+  "main": "index.html",
+  "scripts": {
+    "dev": "npx http-server . -p 8080 -o",
+    "start": "npx http-server . -p 8080 -o"
+  },
+  "keywords": [
+    "topology",
+    "g6",
+    "visualization"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {}
+}
+
+
