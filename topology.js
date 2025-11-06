@@ -1,106 +1,50 @@
 const { Graph, NodeEvent } = G6;
 
+// 定义节点状态颜色映射
+const statusColors = {
+    normal: '#808080',    // 灰色 - 正常
+    warning: '#FFA500',   // 橙色 - 警戒
+    severe: '#FF4444',    // 红色 - 严重
+};
+
 const data = {
     nodes: [
-        {
-            id: '0',
-            label: '0',
-            value: 10,
-            cluster: 'a',
-            description: 'this is node 0, \nand the value of it is 10',
-        },
-        {
-            id: '1',
-            label: '1',
-            value: 20,
-            cluster: 'b',
-            description: 'this is node 1, \nand the value of it is 20',
-        },
-        {
-            id: '2',
-            label: '2',
-            value: 5,
-            cluster: 'a',
-            description: 'this is node 2, \nand the value of it is 5',
-        },
-        {
-            id: '3',
-            label: '3',
-            value: 10,
-            cluster: 'a',
-            description: 'this is node 3, \nand the value of it is 10',
-        },
-        {
-            id: '4',
-            label: '4',
-            value: 12,
-            cluster: 'c',
-            subCluster: 'sb',
-            description: 'this is node 4, \nand the value of it is 12',
-        },
-        {
-            id: '5',
-            label: '5',
-            value: 18,
-            cluster: 'c',
-            subCluster: 'sa',
-            description: 'this is node 5, \nand the value of it is 18',
-        },
-        {
-            id: '6',
-            label: '6',
-            value: 3,
-            cluster: 'c',
-            subCluster: 'sa',
-            description: 'this is node 6, \nand the value of it is 3',
-        },
-        {
-            id: '7',
-            label: '7',
-            value: 7,
-            cluster: 'b',
-            subCluster: 'sa',
-            description: 'this is node 7, \nand the value of it is 7',
-        },
-        {
-            id: '8',
-            label: '8',
-            value: 21,
-            cluster: 'd',
-            subCluster: 'sb',
-            description: 'this is node 8, \nand the value of it is 21',
-        },
-        {
-            id: '9',
-            label: '9',
-            value: 9,
-            cluster: 'd',
-            subCluster: 'sb',
-            description: 'this is node 9, \nand the value of it is 9',
-        },
+        // 订单子系统节点
+        { id: 'order-node-1', label: '', description: '订单服务1', status: 'normal', combo: 'order-subsystem' },
+        { id: 'order-node-2', label: '', description: '订单服务2', status: 'warning', combo: 'order-subsystem' },
+        { id: 'order-node-3', label: '', description: '订单服务3', status: 'normal', combo: 'order-subsystem' },
+        { id: 'order-node-4', label: '', description: '订单服务4', status: 'severe', combo: 'order-subsystem' },
+        { id: 'order-node-5', label: '', description: '订单服务5', status: 'warning', combo: 'order-subsystem' },
+        { id: 'order-node-6', label: '', description: '订单服务6', status: 'normal', combo: 'order-subsystem' },
+        { id: 'order-node-7', label: '', description: '订单服务7', status: 'warning', combo: 'order-subsystem' },
+        { id: 'order-node-8', label: '', description: '订单服务8', status: 'severe', combo: 'order-subsystem' }
     ],
     edges: [],
+    combos: [
+        // 主系统：电商系统1
+        {
+            id: 'ecommerce-system',
+            label: '电商系统1',
+            labelText: '电商系统1',
+        },
+        // 订单子系统（嵌套在主系统内）
+        {
+            id: 'order-subsystem',
+            label: '订单子系统',
+            labelText: '订单子系统',
+            combo: 'ecommerce-system', // 属于电商系统
+        }
+    ],
 };
 
 const oriSize = {};
 const nodes = data.nodes;
 
-// randomize the node size
+// 初始化节点大小
 nodes.forEach((node) => {
-    node.size = Math.random() * 30 + 16;
+    node.size = Math.random() * 20 + 12;
     oriSize[node.id] = node.size;
-    // 将所有节点添加到组合中，使用 combo 属性
-    node.combo = 'main-combo';
 });
-
-// 添加圆形组合
-data.combos = [
-    {
-        id: 'main-combo',
-        label: '系统节点',
-        labelText: '系统节点',
-    },
-];
 
 const container = document.getElementById('container');
 const width = container.scrollWidth || window.innerWidth;
@@ -108,18 +52,19 @@ const height = container.scrollHeight || window.innerHeight;
 
 const graph = new Graph({
     container: 'container',
-        width: width,
-        height: height,
+    width: width,
+    height: height,
     data,
     node: {
         style: {
             size: (d) => d.size,
-            labelText: (d) => (d.size === 200 ? d.description : d.id),
+            labelText: (d) => (d.size === 200 ? d.description : d.label),
             labelPlacement: 'middle',
             labelFill: '#fff',
-        },
-        palette: {
-            field: (d) => d.cluster,
+            labelFontSize: 10,
+            fill: (d) => statusColors[d.status] || statusColors.normal,
+            stroke: (d) => statusColors[d.status] || statusColors.normal,
+            lineWidth: 1,
         },
     },
     combo: {
@@ -133,7 +78,7 @@ const graph = new Graph({
             labelFill: '#fff',
             labelFontSize: 14,
         },
-        padding: 20,
+        padding: 30,
     },
     layout: {
         type: 'd3-force',
@@ -150,17 +95,13 @@ const graph = new Graph({
 
 graph.on(NodeEvent.CLICK, async (e) => {
     const nodeId = e.target.id;
-    const data = graph.getNodeData(nodeId);
-    const size = data.size === oriSize[nodeId] ? 200 : oriSize[nodeId];
-    graph.updateNodeData([{ id: nodeId, size }]);
-    await graph.layout();
-});
-
-    graph.render();
-
-// 响应窗口大小变化
-    window.addEventListener('resize', () => {
-    if (!graph.destroyed) {
-        graph.changeSize(window.innerWidth, window.innerHeight);
+    const nodeData = graph.getNodeData(nodeId);
+    if (nodeData && oriSize[nodeId] !== undefined) {
+        const size = nodeData.size === oriSize[nodeId] ? 200 : oriSize[nodeId];
+        graph.updateNodeData([{ id: nodeId, size }]);
+        await graph.layout();
     }
 });
+
+graph.render();
+
