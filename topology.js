@@ -118,7 +118,7 @@ const data = {
             description: 'this is node 9, \nand the value of it is 9',
         },
     ],
-    edges: [],
+    edges: [], // 将在后面添加虚拟边连接所有节点到中心
     combos: [],
 };
 
@@ -137,13 +137,15 @@ const graph = new G6.Graph({
     height,
     groupByTypes: false, // 确保 combo 和节点的视觉层级正确
     layout: {
-        type: 'comboForce',
-        linkDistance: 100, // 边的长度
-        nodeStrength: 30, // 节点之间的斥力
-        edgeStrength: 0.1, // 边的引力
+        type: 'force',
+        center: [width / 2, height / 2], // 布局中心
+        linkDistance: 25, // 边的长度，继续减小让节点更靠近中心
+        nodeStrength: -3, // 节点之间的斥力，继续减小让节点可以非常紧靠
+        collideStrength: 0.1, // 碰撞强度，继续减小让节点可以更紧靠
         preventOverlap: true, // 防止节点重叠
-        nodeSpacing: 30, // 节点之间的最小距离
-        comboPadding: 20, // Combo 内边距，让节点更靠近 combo 中心
+        nodeSpacing: 2, // 节点之间的最小距离，继续减小让节点紧靠
+        alphaDecay: 0.02, // 衰减速度
+        alpha: 0.3, // 初始温度，让布局有更多时间收敛
     },
     modes: {
         default: [
@@ -192,8 +194,9 @@ nodes.forEach((node) => {
     if (!node.style) node.style = {};
     node.style.fill = colors[cid % colors.length];
     node.style.stroke = strokes[cid % strokes.length];
-    node.x = width / 2 + 200 * (Math.random() - 0.5);
-    node.y = height / 2 + 200 * (Math.random() - 0.5);
+    // 减小初始随机位置范围，让节点更靠近中心，便于力导向图聚集
+    node.x = width / 2 + 5 * (Math.random() - 0.5);
+    node.y = height / 2 + 5 * (Math.random() - 0.5);
 
     // 将所有节点添加到同一个 combo 分组
     node.comboId = 'system-combo';
@@ -215,6 +218,36 @@ const combo = {
     }
 };
 data.combos.push(combo);
+
+// 为没有边的力导向图添加虚拟边，让节点产生吸引力并聚集
+// 创建一个中心节点，所有节点都连接到它
+const centerNodeId = 'center-node';
+data.nodes.push({
+    id: centerNodeId,
+    label: '',
+    value: 0,
+    style: {
+        fill: 'transparent',
+        stroke: 'transparent',
+        opacity: 0,
+    },
+    size: 0,
+    x: width / 2,
+    y: height / 2,
+    comboId: 'system-combo',
+});
+
+// 所有节点都连接到中心节点，产生吸引力
+nodes.forEach((node) => {
+    data.edges.push({
+        source: node.id,
+        target: centerNodeId,
+        style: {
+            opacity: 0, // 隐藏边，只用于布局
+            lineWidth: 0,
+        },
+    });
+});
 
 // map the value to node size
 let maxNodeValue = -9999,
