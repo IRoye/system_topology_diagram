@@ -1,107 +1,315 @@
-const { Graph, NodeEvent } = G6;
+const { Graph, NodeEvent } = G6
 
-// 定义节点状态颜色映射
-const statusColors = {
-    normal: '#808080',    // 灰色 - 正常
-    warning: '#FFA500',   // 橙色 - 警戒
-    severe: '#FF4444',    // 红色 - 严重
-};
+function _defineProperty(obj, key, value) {
+    if (key in obj) {
+        Object.defineProperty(obj, key, {
+            value,
+            enumerable: true,
+            configurable: true,
+            writable: true,
+        });
+    } else {
+        obj[key] = value;
+    }
+    return obj;
+}
+
+const colors = [
+    '#BDD2FD',
+    '#BDEFDB',
+    '#C2C8D5',
+    '#FBE5A2',
+    '#F6C3B7',
+    '#B6E3F5',
+    '#D3C6EA',
+    '#FFD8B8',
+    '#AAD8D8',
+    '#FFD6E7',
+];
+const strokes = [
+    '#5B8FF9',
+    '#5AD8A6',
+    '#5D7092',
+    '#F6BD16',
+    '#E8684A',
+    '#6DC8EC',
+    '#9270CA',
+    '#FF9D4D',
+    '#269A99',
+    '#FF99C3',
+];
 
 const data = {
     nodes: [
-        // 订单子系统节点
-        { id: 'order-node-1', label: '', description: '订单服务1', status: 'normal', combo: 'order-subsystem' },
-        { id: 'order-node-2', label: '', description: '订单服务2', status: 'warning', combo: 'order-subsystem' },
-        { id: 'order-node-3', label: '', description: '订单服务3', status: 'normal', combo: 'order-subsystem' },
-        { id: 'order-node-4', label: '', description: '订单服务4', status: 'severe', combo: 'order-subsystem' },
-        { id: 'order-node-5', label: '', description: '订单服务5', status: 'warning', combo: 'order-subsystem' },
-        { id: 'order-node-6', label: '', description: '订单服务6', status: 'normal', combo: 'order-subsystem' },
-        { id: 'order-node-7', label: '', description: '订单服务7', status: 'warning', combo: 'order-subsystem' },
-        { id: 'order-node-8', label: '', description: '订单服务8', status: 'severe', combo: 'order-subsystem' }
+        {
+            id: '0',
+            label: '0',
+            value: 10,
+            cluster: 'a',
+            description: 'this is node 0, \nand the value of it is 10',
+        },
+        {
+            id: '1',
+            label: '1',
+            value: 20,
+            cluster: 'b',
+            description: 'this is node 1, \nand the value of it is 20',
+        },
+        {
+            id: '2',
+            label: '2',
+            value: 5,
+            cluster: 'a',
+            description: 'this is node 2, \nand the value of it is 5',
+        },
+        {
+            id: '3',
+            label: '3',
+            value: 10,
+            cluster: 'a',
+            description: 'this is node 3, \nand the value of it is 10',
+        },
+        {
+            id: '4',
+            label: '4',
+            value: 12,
+            cluster: 'c',
+            subCluster: 'sb',
+            description: 'this is node 4, \nand the value of it is 12',
+        },
+        {
+            id: '5',
+            label: '5',
+            value: 18,
+            cluster: 'c',
+            subCluster: 'sa',
+            description: 'this is node 5, \nand the value of it is 18',
+        },
+        {
+            id: '6',
+            label: '6',
+            value: 3,
+            cluster: 'c',
+            subCluster: 'sa',
+            description: 'this is node 6, \nand the value of it is 3',
+        },
+        {
+            id: '7',
+            label: '7',
+            value: 7,
+            cluster: 'b',
+            subCluster: 'sa',
+            description: 'this is node 7, \nand the value of it is 7',
+        },
+        {
+            id: '8',
+            label: '8',
+            value: 21,
+            cluster: 'd',
+            subCluster: 'sb',
+            description: 'this is node 8, \nand the value of it is 21',
+        },
+        {
+            id: '9',
+            label: '9',
+            value: 9,
+            cluster: 'd',
+            subCluster: 'sb',
+            description: 'this is node 9, \nand the value of it is 9',
+        },
     ],
     edges: [],
-    combos: [
-        // 主系统：电商系统1
-        {
-            id: 'ecommerce-system',
-            label: '电商系统1',
-            labelText: '电商系统1',
-        },
-        // 订单子系统（嵌套在主系统内）
-        {
-            id: 'order-subsystem',
-            label: '订单子系统',
-            labelText: '订单子系统',
-            combo: 'ecommerce-system', // 属于电商系统
-        }
-    ],
+    combos: [],
 };
 
-const oriSize = {};
-const nodes = data.nodes;
-
-// 初始化节点大小
-nodes.forEach((node) => {
-    node.size = Math.random() * 20 + 12;
-    oriSize[node.id] = node.size;
-});
+const tipDiv = document.createElement('div');
+tipDiv.innerHTML = 'Try to click or drag a bubble!';
+const graphDiv = document.getElementById('container');
+graphDiv.appendChild(tipDiv);
 
 const container = document.getElementById('container');
-const width = container.scrollWidth || window.innerWidth;
-const height = container.scrollHeight || window.innerHeight;
+const width = container.scrollWidth;
+const height = (container.scrollHeight || 500) - 20;
 
-const graph = new Graph({
+const graph = new G6.Graph({
     container: 'container',
-    width: width,
-    height: height,
-    data,
-    node: {
-        style: {
-            size: (d) => d.size,
-            labelText: (d) => (d.size === 200 ? d.description : d.label),
-            labelPlacement: 'middle',
-            labelFill: '#fff',
-            labelFontSize: 10,
-            fill: (d) => statusColors[d.status] || statusColors.normal,
-            stroke: (d) => statusColors[d.status] || statusColors.normal,
-            lineWidth: 1,
-        },
+    width,
+    height,
+    groupByTypes: false, // 确保 combo 和节点的视觉层级正确
+    layout: {
+        type: 'comboForce',
+        linkDistance: 100, // 边的长度
+        nodeStrength: 30, // 节点之间的斥力
+        edgeStrength: 0.1, // 边的引力
+        preventOverlap: true, // 防止节点重叠
+        nodeSpacing: 30, // 节点之间的最小距离
+        comboPadding: 20, // Combo 内边距，让节点更靠近 combo 中心
     },
-    combo: {
+    modes: {
+        default: [
+            'drag-node',
+            'drag-combo',
+            {
+                type: 'collapse-expand-combo',
+                relayout: true, // 折叠展开时重新布局
+            },
+        ],
+    },
+    defaultNode: {
+        size: [10, 10],
+    },
+    defaultCombo: {
         type: 'circle',
         style: {
-            fill: 'rgba(100, 100, 100, 0.15)',
-            stroke: 'rgba(200, 200, 200, 0.8)',
             lineWidth: 2,
-            labelText: (d) => d.labelText || d.label || '',
-            labelPlacement: 'top',
-            labelFill: '#fff',
-            labelFontSize: 14,
+            fillOpacity: 0.1,
         },
-        padding: 30,
-    },
-    layout: {
-        type: 'd3-force',
-        collide: {
-            radius: (d) => d.size / 2,
-            strength: 0.7,
-        },
-        manyBody: {
-            strength: 30,
+        labelCfg: {
+            refY: -10,
+            position: 'top',
         },
     },
-    behaviors: ['drag-element-force', 'collapse-expand', 'drag-element'],
+    comboStateStyles: {
+        active: {
+            lineWidth: 3,
+        },
+    },
 });
 
-graph.on(NodeEvent.CLICK, async (e) => {
-    const nodeId = e.target.id;
-    const nodeData = graph.getNodeData(nodeId);
-    if (nodeData && oriSize[nodeId] !== undefined) {
-        const size = nodeData.size === oriSize[nodeId] ? 200 : oriSize[nodeId];
-        graph.updateNodeData([{ id: nodeId, size }]);
-        await graph.layout();
+// mapping
+const nodes = data.nodes;
+const nodeMap = new Map();
+const clusterMap = new Map();
+let clusterId = 0;
+nodes.forEach((node) => {
+    nodeMap.set(node.id, node);
+    // cluster
+    if (node.cluster && clusterMap.get(node.cluster) === undefined) {
+        clusterMap.set(node.cluster, clusterId);
+        clusterId++;
     }
+    const cid = clusterMap.get(node.cluster);
+    if (!node.style) node.style = {};
+    node.style.fill = colors[cid % colors.length];
+    node.style.stroke = strokes[cid % strokes.length];
+    node.x = width / 2 + 200 * (Math.random() - 0.5);
+    node.y = height / 2 + 200 * (Math.random() - 0.5);
+
+    // 将所有节点添加到同一个 combo 分组
+    node.comboId = 'system-combo';
 });
 
+// 只创建一个 combo 分组，包含所有节点
+const combo = {
+    id: 'system-combo',
+    label: 'System',
+    style: {
+        fill: '#BDD2FD',
+        stroke: '#5B8FF9',
+        fillOpacity: 0.1,
+    },
+    labelCfg: {
+        style: {
+            fill: '#ffffff'
+        }
+    }
+};
+data.combos.push(combo);
+
+// map the value to node size
+let maxNodeValue = -9999,
+    minNodeValue = 9999;
+nodes.forEach(function (n) {
+    if (maxNodeValue < n.value) maxNodeValue = n.value;
+    if (minNodeValue > n.value) minNodeValue = n.value;
+});
+const nodeSizeRange = [10, 30];
+const nodeSizeDataRange = [minNodeValue, maxNodeValue];
+scaleNodeProp(nodes, 'size', 'value', nodeSizeDataRange, nodeSizeRange);
+
+nodes.forEach(function (node) {
+    node.oriSize = node.size;
+    node.oriLabel = node.label;
+});
+
+function refreshDragedNodePosition(e) {
+    const model = e.item.get('model');
+    model.fx = e.x;
+    model.fy = e.y;
+}
+graph.on('node:dragstart', function (e) {
+    graph.layout();
+    refreshDragedNodePosition(e);
+});
+graph.on('node:drag', function (e) {
+    refreshDragedNodePosition(e);
+});
+graph.on('node:dragend', function (e) {
+    e.item.get('model').fx = null;
+    e.item.get('model').fy = null;
+});
+graph.on('node:click', function (e) {
+    const node = e.item;
+    const states = node.getStates();
+    let clicked = false;
+    const model = node.getModel();
+    let size = 200;
+    let labelText = 'NODE: ' + model.id + '\n' + model.description;
+    states.forEach(function (state) {
+        if (state === 'click') {
+            clicked = true;
+            size = model.oriSize;
+            labelText = model.oriLabel;
+        }
+    });
+    graph.setItemState(node, 'click', !clicked);
+    graph.updateItem(node, {
+        size,
+        label: labelText,
+    });
+    graph.layout();
+});
+
+// combo 点击事件
+graph.on('combo:click', function (e) {
+    const combo = e.item;
+    const states = combo.getStates();
+    let clicked = false;
+    states.forEach(function (state) {
+        if (state === 'active') {
+            clicked = true;
+        }
+    });
+    graph.setItemState(combo, 'active', !clicked);
+});
+
+graph.data(data);
 graph.render();
 
+if (typeof window !== 'undefined')
+    window.onresize = () => {
+        if (!graph || graph.get('destroyed')) return;
+        if (!container || !container.scrollWidth || !container.scrollHeight) return;
+        graph.changeSize(container.scrollWidth, container.scrollHeight - 20);
+    };
+
+function scaleNodeProp(elements, propName, refPropName, dataRange, outRange) {
+    const outLength = outRange[1] - outRange[0];
+    const dataLength = dataRange[1] - dataRange[0];
+    elements.forEach(function (n) {
+        if (propName.split('.')[0] === 'style') {
+            if (n.style) {
+                n.style[propName.split('.')[1]] =
+                    ((n[refPropName] - dataRange[0]) * outLength) / dataLength + outRange[0];
+            } else {
+                n.style = _defineProperty(
+                    {},
+                    propName.split('.')[1],
+                    ((n[refPropName] - dataRange[0]) * outLength) / dataLength + outRange[0],
+                );
+            }
+        } else {
+            n[propName] = ((n[refPropName] - dataRange[0]) * outLength) / dataLength + outRange[0];
+        }
+    });
+}
